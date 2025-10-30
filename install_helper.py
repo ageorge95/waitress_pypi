@@ -4,6 +4,7 @@ invalid_python_versions = [
     "3.7",
     "3.8",
     "3.9",
+    "3.13" # incompatibility
 ]
 
 current_python_version = f'{version_info.major}.{version_info.minor}'
