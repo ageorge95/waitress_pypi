@@ -19,9 +19,11 @@ if not os.path.isdir('wheels'):
     os.makedirs('wheels')
 
 application = app(
-    roots=".wheels",
+    roots=["wheels"],
     verbosity=3,
-    disable_fallback=True
+    disable_fallback=True,
+    password_file='.htpasswd',
+    authenticate=['update']
 )
 
 print("=" * 60)
