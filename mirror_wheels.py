@@ -333,6 +333,7 @@ def download_distribution(link_info, source_info, wheels_dir, timeout=60, stop_e
 
     logger.info(f"Downloading {filename} from {url}...")
     hasher = hashlib.new(hash_algo) if (hash_algo and hash_value) else None
+    cancelled = False
 
     try:
         with urllib.request.urlopen(req, context=ssl_ctx, timeout=timeout) as response:
@@ -340,15 +341,22 @@ def download_distribution(link_info, source_info, wheels_dir, timeout=60, stop_e
                 while True:
                     if stop_event is not None and stop_event.is_set():
                         logger.info(f"Download cancelled for {filename}.")
-                        if os.path.exists(temp_path):
-                            os.remove(temp_path)
-                        return False
+                        cancelled = True
+                        break
                     chunk = response.read(65536)
                     if not chunk:
                         break
                     f.write(chunk)
                     if hasher:
                         hasher.update(chunk)
+
+        if cancelled:
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except OSError:
+                    pass
+            return False
 
         if hasher and hash_value:
             computed = hasher.hexdigest().lower()
@@ -460,13 +468,13 @@ def wait_interval(stop_event, timeout_seconds, parent_pid=None):
     return False
 
 
-def mirror_worker(stop_event=None, parent_pid=None):
+def mirror_worker(stop_event=None, parent_pid=None, config_path=CONFIG_FILE):
     """Worker loop running periodic mirroring."""
     if parent_pid is None:
         parent_pid = os.getppid()
 
     logger.info(f"Mirror worker process started (monitoring parent PID {parent_pid}).")
-    config = load_config()
+    config = load_config(config_path)
 
     if config.get('mirror_run_on_startup', True) and config.get('mirror_enabled', True):
         try:
@@ -475,7 +483,7 @@ def mirror_worker(stop_event=None, parent_pid=None):
             logger.error(f"Initial mirroring execution failed: {e}", exc_info=True)
 
     while True:
-        config = load_config()
+        config = load_config(config_path)
         if not config.get('mirror_enabled', True):
             interval_seconds = 60.0
         else:
@@ -501,9 +509,9 @@ def mirror_worker(stop_event=None, parent_pid=None):
     logger.info("Mirror worker process stopped.")
 
 
-def start_mirror_process():
+def start_mirror_process(config_path=CONFIG_FILE):
     """Start the mirror worker as a separate multiprocessing Process."""
-    config = load_config()
+    config = load_config(config_path)
     if not config.get('mirror_enabled', True):
         logger.info("Mirror worker is disabled in configuration.")
         return None, None
@@ -512,7 +520,7 @@ def start_mirror_process():
     parent_pid = os.getpid()
     process = multiprocessing.Process(
         target=mirror_worker,
-        args=(stop_event, parent_pid),
+        args=(stop_event, parent_pid, config_path),
         name='MirrorProcess',
         daemon=True
     )
