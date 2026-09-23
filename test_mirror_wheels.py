@@ -223,6 +223,11 @@ class TestMirrorWheels(unittest.TestCase):
         req_token = build_request('https://example.com', src_token)
         self.assertEqual(req_token.get_header('Authorization'), 'Bearer mytoken123')
 
+        src_user_token = {'username': 'testuser', 'token': 'mytoken123'}
+        req_user_token = build_request('https://example.com', src_user_token)
+        expected_user_token = 'Basic ' + base64.b64encode(b"testuser:mytoken123").decode('ascii')
+        self.assertEqual(req_user_token.get_header('Authorization'), expected_user_token)
+
     def test_verify_file_hash(self):
         file_path = os.path.join(self.wheels_dir, 'sample.txt')
         content = b"sample content for hashing"

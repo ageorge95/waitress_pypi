@@ -178,6 +178,10 @@ def build_request(url, source_info):
         user_pass = f"{source_info['username']}:{source_info['password']}"
         encoded = base64.b64encode(user_pass.encode('utf-8')).decode('ascii')
         req.add_header('Authorization', f'Basic {encoded}')
+    elif source_info.get('username') and source_info.get('token'):
+        user_pass = f"{source_info['username']}:{source_info['token']}"
+        encoded = base64.b64encode(user_pass.encode('utf-8')).decode('ascii')
+        req.add_header('Authorization', f'Basic {encoded}')
     elif source_info.get('token'):
         req.add_header('Authorization', f"Bearer {source_info['token']}")
     return req
