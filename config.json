@@ -1,0 +1,7 @@
+{
+  "backup_interval_hours": 24,
+  "output_dir": "backups",
+  "wheels_dir": "wheels",
+  "max_backups": 10,
+  "run_on_startup": true
+}
