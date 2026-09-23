@@ -31,7 +31,7 @@ class TestBackup(unittest.TestCase):
         cfg = load_config()
         self.assertEqual(cfg['backup_interval_hours'], 24)
         self.assertEqual(cfg['max_backups'], 10)
-        self.assertTrue(cfg['run_on_startup'])
+        self.assertTrue(cfg['backup_run_on_startup'])
         self.assertTrue(cfg['output_dir'].endswith('backups'))
         self.assertTrue(cfg['wheels_dir'].endswith('wheels'))
 
@@ -46,14 +46,14 @@ class TestBackup(unittest.TestCase):
             'max_backups': 5,
             'output_dir': self.output_dir,
             'wheels_dir': self.wheels_dir,
-            'run_on_startup': False
+            'backup_run_on_startup': False
         }
         with open(self.config_path, 'w') as f:
             json.dump(custom, f)
         cfg = load_config(self.config_path)
         self.assertEqual(cfg['backup_interval_hours'], 12)
         self.assertEqual(cfg['max_backups'], 5)
-        self.assertFalse(cfg['run_on_startup'])
+        self.assertFalse(cfg['backup_run_on_startup'])
         self.assertEqual(cfg['output_dir'], self.output_dir)
 
     def test_create_zip_archive(self):

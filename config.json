@@ -3,7 +3,7 @@
   "output_dir": "backups",
   "wheels_dir": "wheels",
   "max_backups": 10,
-  "run_on_startup": true,
+  "backup_run_on_startup": true,
   "mirror_enabled": true,
   "mirror_interval_minutes": 240,
   "mirror_run_on_startup": true,

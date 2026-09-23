@@ -148,7 +148,7 @@ def backup_worker(stop_event=None, parent_pid=None):
     logger.info(f"Backup worker process started (monitoring parent PID {parent_pid}).")
     config = load_config()
 
-    if config.get('run_on_startup', False):
+    if config.get('backup_run_on_startup', config.get('run_on_startup', False)):
         perform_backup()
 
     while True:
