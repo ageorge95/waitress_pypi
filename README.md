@@ -39,7 +39,7 @@ A lightweight, self-hosted private Python package index (PyPI) server backed by 
    ```cmd
    Install.bat
    ```
-   This validates the Python version, creates a `venv` virtual environment, configures the `activate.bat` shortcut, and installs requirements (`pypiserver`, `waitress`, `passlib`).
+   This validates the Python version, creates a `venv` virtual environment, configures the `activate.bat` shortcut, and installs requirements (`pypiserver`, `waitress`, `passlib`, `watchdog`).
 
 2. **Generate Credentials (First run):**
    ```cmd
@@ -90,12 +90,14 @@ All runtime settings for backups and package mirroring are controlled via `confi
 ```json
 {
   "backup_interval_hours": 24,
+  "backup_startup_delay_seconds": 600,
   "output_dir": "backups",
   "wheels_dir": "wheels",
   "max_backups": 10,
   "backup_run_on_startup": true,
   "mirror_enabled": true,
   "mirror_interval_minutes": 240,
+  "mirror_startup_delay_seconds": 600,
   "mirror_run_on_startup": true,
   "mirror_packages": [
     "requests",
@@ -114,11 +116,13 @@ All runtime settings for backups and package mirroring are controlled via `confi
 | `wheels_dir` | string | `"wheels"` | Directory containing served package distributions. |
 | `output_dir` | string | `"backups"` | Target folder for backup archives. |
 | `backup_interval_hours` | number | `24` | Interval (in hours) between backup snapshots. |
-| `backup_run_on_startup` | boolean | `true` | Run a backup immediately when server launches. |
+| `backup_startup_delay_seconds` | number | `600` | Delay (in seconds) before initial startup backup executes. |
+| `backup_run_on_startup` | boolean | `true` | Schedule a backup when server launches (after startup delay). |
 | `max_backups` | integer | `10` | Maximum number of backup archives to keep. |
 | `mirror_enabled` | boolean | `true` | Enable or disable the periodic mirroring worker. |
 | `mirror_interval_minutes` | number | `240` | Mirroring sync frequency in minutes (can also use `mirror_interval_hours`). |
-| `mirror_run_on_startup` | boolean | `true` | Run mirror sync immediately when server launches. |
+| `mirror_startup_delay_seconds` | number | `600` | Delay (in seconds) before initial startup mirror sync executes. |
+| `mirror_run_on_startup` | boolean | `true` | Schedule mirror sync when server launches (after startup delay). |
 | `mirror_packages` | list | `[]` | Package names to mirror from upstream sources. |
 | `mirror_sources` | list | `[...]` | Upstream repositories to fetch distributions from. |
 
