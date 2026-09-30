@@ -481,6 +481,12 @@ def mirror_worker(stop_event=None, parent_pid=None, config_path=CONFIG_FILE):
     config = load_config(config_path)
 
     if config.get('mirror_run_on_startup', True) and config.get('mirror_enabled', True):
+        startup_delay = float(config.get('mirror_startup_delay_seconds', 600.0))
+        logger.info(f"Initial mirroring scheduled in {startup_delay:.1f}s.")
+        should_stop = wait_interval(stop_event, startup_delay, parent_pid)
+        if should_stop:
+            logger.info("Mirror worker process stopped before initial mirroring.")
+            return
         try:
             perform_mirroring(config=config, stop_event=stop_event)
         except Exception as e:

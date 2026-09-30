@@ -1,11 +1,13 @@
 {
   "backup_interval_hours": 24,
+  "backup_startup_delay_seconds": 600,
   "output_dir": "backups",
   "wheels_dir": "wheels",
   "max_backups": 10,
   "backup_run_on_startup": true,
   "mirror_enabled": true,
   "mirror_interval_minutes": 240,
+  "mirror_startup_delay_seconds": 600,
   "mirror_run_on_startup": true,
   "mirror_packages": [
     "my-package"

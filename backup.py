@@ -33,7 +33,7 @@ def load_config(config_path=CONFIG_FILE):
     return config
 
 
-def create_zip_archive(source_dir, output_dir):
+def create_zip_archive(source_dir, output_dir, stop_event=None):
     """Archive source_dir into a zip file named with current timestamp."""
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(source_dir, exist_ok=True)
@@ -44,9 +44,18 @@ def create_zip_archive(source_dir, output_dir):
     temp_path = f"{final_path}.tmp"
 
     logger.info(f"Creating backup archive: {final_path}")
-    with zipfile.ZipFile(temp_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+    with zipfile.ZipFile(temp_path, 'w', zipfile.ZIP_STORED) as zf:
         for root, _, files in os.walk(source_dir):
             for file in files:
+                if stop_event is not None and stop_event.is_set():
+                    logger.info("Backup cancelled by stop event.")
+                    zf.close()
+                    if os.path.exists(temp_path):
+                        try:
+                            os.remove(temp_path)
+                        except OSError:
+                            pass
+                    return None
                 file_path = os.path.join(root, file)
                 # Keep directory structure relative to parent of source_dir
                 arcname = os.path.relpath(file_path, os.path.dirname(source_dir))
@@ -81,16 +90,18 @@ def cleanup_old_backups(output_dir, max_backups):
                 logger.error(f"Failed to delete old backup {old_file}: {e}")
 
 
-def perform_backup():
+def perform_backup(stop_event=None, config=None):
     """Execute a single backup run and cleanup."""
-    config = load_config()
+    if config is None:
+        config = load_config()
     wheels_dir = config['wheels_dir']
     output_dir = config['output_dir']
     max_backups = int(config['max_backups'])
 
     try:
-        create_zip_archive(wheels_dir, output_dir)
-        cleanup_old_backups(output_dir, max_backups)
+        created = create_zip_archive(wheels_dir, output_dir, stop_event=stop_event)
+        if created:
+            cleanup_old_backups(output_dir, max_backups)
     except Exception as e:
         logger.error(f"Backup execution failed: {e}", exc_info=True)
 
@@ -140,19 +151,25 @@ def wait_interval(stop_event, timeout_seconds, parent_pid=None):
     return False
 
 
-def backup_worker(stop_event=None, parent_pid=None):
+def backup_worker(stop_event=None, parent_pid=None, config_path=CONFIG_FILE):
     """Worker loop running periodic backups."""
     if parent_pid is None:
         parent_pid = os.getppid()
 
     logger.info(f"Backup worker process started (monitoring parent PID {parent_pid}).")
-    config = load_config()
+    config = load_config(config_path)
 
     if config.get('backup_run_on_startup', config.get('run_on_startup', False)):
-        perform_backup()
+        startup_delay = float(config.get('backup_startup_delay_seconds', 600.0))
+        logger.info(f"Initial backup scheduled in {startup_delay:.1f}s.")
+        should_stop = wait_interval(stop_event, startup_delay, parent_pid)
+        if should_stop:
+            logger.info("Backup worker process stopped before initial backup.")
+            return
+        perform_backup(stop_event=stop_event, config=config)
 
     while True:
-        config = load_config()
+        config = load_config(config_path)
         # Support backup_interval_seconds for testing or backup_interval_hours
         interval_seconds = config.get('backup_interval_seconds')
         if interval_seconds is None:
@@ -163,18 +180,18 @@ def backup_worker(stop_event=None, parent_pid=None):
         if should_stop:
             break
 
-        perform_backup()
+        perform_backup(stop_event=stop_event, config=config)
 
     logger.info("Backup worker process stopped.")
 
 
-def start_backup_process():
+def start_backup_process(config_path=CONFIG_FILE):
     """Start the backup worker as a separate multiprocessing Process."""
     stop_event = multiprocessing.Event()
     parent_pid = os.getpid()
     process = multiprocessing.Process(
         target=backup_worker,
-        args=(stop_event, parent_pid),
+        args=(stop_event, parent_pid, config_path),
         name='BackupProcess',
         daemon=True
     )
