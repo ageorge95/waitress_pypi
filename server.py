@@ -31,7 +31,9 @@ application = app(
     verbosity=3,
     disable_fallback=True,
     password_file='.htpasswd',
-    authenticate=['update']
+    authenticate=['update'],
+    hash_algo=None,
+    cache_control=3600
 )
 
 if __name__ == '__main__':
