@@ -32,6 +32,7 @@ class TestBackup(unittest.TestCase):
         self.assertEqual(cfg['backup_interval_hours'], 24)
         self.assertEqual(cfg['max_backups'], 10)
         self.assertTrue(cfg['backup_run_on_startup'])
+        self.assertEqual(cfg['backup_startup_delay_seconds'], 600)
         self.assertTrue(cfg['output_dir'].endswith('backups'))
         self.assertTrue(cfg['wheels_dir'].endswith('wheels'))
 
@@ -69,6 +70,20 @@ class TestBackup(unittest.TestCase):
         with zipfile.ZipFile(archive_path, 'r') as zf:
             namelist = zf.namelist()
             self.assertTrue(any('sample_package-1.0-py3-none-any.whl' in name for name in namelist))
+            for info in zf.infolist():
+                self.assertEqual(info.compress_type, zipfile.ZIP_STORED)
+
+    def test_create_zip_archive_stop_event(self):
+        import multiprocessing
+        stop_event = multiprocessing.Event()
+        stop_event.set()
+        sample_file = os.path.join(self.wheels_dir, 'sample_package-1.0-py3-none-any.whl')
+        with open(sample_file, 'w') as f:
+            f.write('dummy content')
+
+        archive_path = create_zip_archive(self.wheels_dir, self.output_dir, stop_event=stop_event)
+        self.assertIsNone(archive_path)
+        self.assertEqual(len(os.listdir(self.output_dir)), 0)
 
     def test_cleanup_old_backups(self):
         # Create 12 files with staggered timestamps

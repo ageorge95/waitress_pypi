@@ -322,6 +322,31 @@ class TestMirrorWheels(unittest.TestCase):
         proc.join(timeout=3)
         self.assertFalse(proc.is_alive())
 
+    def test_start_mirror_process_with_startup_delay(self):
+        custom_config = {
+            'wheels_dir': self.wheels_dir,
+            'mirror_packages': ['adas-tsf'],
+            'mirror_sources': [f'http://127.0.0.1:{self.port}/simple'],
+            'mirror_enabled': True,
+            'mirror_interval_seconds': 5,
+            'mirror_run_on_startup': True,
+            'mirror_startup_delay_seconds': 600
+        }
+        with open(self.config_path, 'w') as f:
+            json.dump(custom_config, f)
+
+        proc, stop_event = start_mirror_process(config_path=self.config_path)
+        self.assertIsNotNone(proc)
+        self.assertIsNotNone(stop_event)
+        self.assertTrue(proc.is_alive())
+
+        time.sleep(0.5)
+        stop_event.set()
+        proc.join(timeout=3)
+        self.assertFalse(proc.is_alive())
+        # No files should have been mirrored because it stopped during startup delay
+        self.assertEqual(len(os.listdir(self.wheels_dir)), 0)
+
     def test_parent_alive_detection(self):
         self.assertTrue(is_parent_alive(os.getpid()))
         self.assertFalse(is_parent_alive(999999))
