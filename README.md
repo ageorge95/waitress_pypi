@@ -35,11 +35,12 @@ A lightweight, self-hosted private Python package index (PyPI) server backed by 
 ### Windows (Automated)
 
 1. **Install Dependencies & Virtual Environment:**
-   Double-click `Install.bat` or run:
+   Run:
    ```cmd
-   Install.bat
+   powershell -ExecutionPolicy Bypass -File _install\install.ps1
    ```
-   This validates the Python version, creates a `venv` virtual environment, configures the `activate.bat` shortcut, and installs requirements (`pypiserver`, `waitress`, `passlib`, `watchdog`).
+   This validates the Python version, creates a `venv` virtual environment, sets up `activate.bat` / `activate.ps1`,
+   copies `pip.ini`, and installs requirements (`pypiserver`, `waitress`, `passlib`, `watchdog`).
 
 2. **Generate Credentials (First run):**
    ```cmd
@@ -231,8 +232,7 @@ python -m unittest discover -s .
 ├── backup.py                # Scheduled backup generator and cleanup worker
 ├── mirror_wheels.py         # Scheduled upstream index package mirror worker
 ├── create_passwords.py      # Utility to initialize .htpasswd credentials
-├── install_helper.py        # Python version compatibility verification
-├── Install.bat              # Windows setup and installation script
+├── _install/               # Universal install/update scripts (PowerShell + Bash) and pip.ini
 ├── START_server.bat         # Windows server startup script
 ├── test_backup.py           # Unit tests for backup operations
 ├── test_mirror_wheels.py    # Unit tests for package mirroring

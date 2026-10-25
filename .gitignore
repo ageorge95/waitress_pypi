@@ -5,3 +5,5 @@ activate.bat
 /*.htpasswd
 /wheels
 /backups
+/activate.ps1
+/activate.sh
